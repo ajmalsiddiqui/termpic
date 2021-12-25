@@ -51,26 +51,34 @@ func convertImageToANSI(img image.Image, skip int) string {
 	ansi := resetColorSequence()
 	yMax := img.Bounds().Max.Y
 	xMax := img.Bounds().Max.X
+
+	sequences := make([]string, yMax)
+
 	for y := img.Bounds().Min.Y; y < yMax; y += 2 * skip {
+		sequence := ""
 		for x := img.Bounds().Min.X; x < xMax; x += skip {
-			// Pixel for the top half of the cursor
 			upperPix := img.At(x, y)
-			// Pixel for the bottom half of the cursor, accounting for skip
 			lowerPix := img.At(x, y+skip)
+
 			ur, ug, ub := convertColorToRGB(upperPix)
 			lr, lg, lb := convertColorToRGB(lowerPix)
+
 			if y+skip >= yMax {
-				ansi += resetColorSequence()
+				sequence += resetColorSequence()
 			} else {
-				ansi += rgbBackgroundSequence(lr, lg, lb)
+				sequence += rgbBackgroundSequence(lr, lg, lb)
 			}
-			ansi += rgbTextSequence(ur, ug, ub)
-			ansi += UPPER_HALF_BLOCK
+
+			sequence += rgbTextSequence(ur, ug, ub)
+			sequence += UPPER_HALF_BLOCK
+
+			sequences[y] = sequence
 		}
-		ansi += resetColorSequence() + "\n"
 	}
 
-	ansi += resetColorSequence()
+	for y := img.Bounds().Min.Y; y < yMax; y += 2 * skip {
+		ansi += sequences[y] + resetColorSequence() + "\n"
+	}
 
 	return ansi
 }
